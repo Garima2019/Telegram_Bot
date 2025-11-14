@@ -79,7 +79,7 @@ Users can:</p>
 /search <keyword>     → search messages by keyword</p>
 <p>All user messages + keywords are stored in DynamoDB automatically.</p>
 <p>🏗️ Architecture Overview</p>
-<p>Here’s the quick picture of how things fit together:</p>
+
 <p>Components</p>
 <p>Telegram Bot → sends updates via getUpdates</p>
 <p>Lambda Function (Python)</p>
