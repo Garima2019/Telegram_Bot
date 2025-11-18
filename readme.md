@@ -1,175 +1,105 @@
-📌 Telegram Bot with AWS Lambda + LocalStack + DynamoDB
-
-A serverless Telegram bot that handles commands, saves user chat history, indexes keywords for search, and runs entirely on LocalStack for local cloud simulation. Built with Terraform, AWS Lambda, DynamoDB, and Python.
-
-🚀 What this bot can do
-
-The bot responds to several commands and stores real chat messages in DynamoDB. Users can:
-
-/hello → greet /help → show commands /echo → echo back text /save → store small key/value pairs /get → retrieve saved values /list → list saved keys /history [n] → show last n messages from chat history /getid → fetch a specific saved message /search → search messages by keyword
-
-All user messages + keywords are stored in DynamoDB automatically.
-
-🏗️ Architecture Overview
-
-Here’s the quick picture of how things fit together:
-
-Components
-
-Telegram Bot → sends updates via getUpdates
-
-Lambda Function (Python)
-
-polls Telegram
-
-processes commands
-
-saves chat history to DynamoDB
-
-writes keyword search index
-
-DynamoDB Tables
-
-user_data (key/value store for /save)
-
-bot_meta (stores update offset)
-
-user_messages (full chat history)
-
-keyword_index (search index)
-
-Terraform
-
-defines Lambda, IAM, DynamoDB tables
-
-packages code using archive provider
-
-LocalStack
-
-simulates AWS services locally (Lambda, DynamoDB, CloudWatch logs)
-
-📂 Project Structure . ├── lambda/ │ ├── handler.py # main lambda code │ ├── requirements.txt ├── main.tf # Terraform infra ├── variables.tf ├── outputs.tf ├── manage-bot.ps1 # automation script (reset offset, update Lambda) └── README.md
-
-🔧 Prerequisites
-
-Make sure you have:
-
-Python 3.9+
-
-pip
-
-Terraform
-
-LocalStack
-
-awslocal CLI
-
-Telegram bot token (talk to @BotFather and create a bot)
-
-▶️ How to Run This Project Locally 1️⃣ Start LocalStack localstack start -d
-
-2️⃣ Export AWS env vars
-
-(Windows PowerShell)
-
-setx AWS_ACCESS_KEY_ID test setx AWS_SECRET_ACCESS_KEY test setx AWS_DEFAULT_REGION us-east-1
-
-3️⃣ Install Lambda dependencies
-
-From project root:
-
-pip install -r lambda/requirements.txt -t lambda/
-
-4️⃣ Deploy infrastructure terraform init terraform apply -auto-approve
-
-Terraform creates:
-
-DynamoDB tables
-
-IAM role
-
-Lambda function
-
-Scheduled EventBridge rule
-
-Lambda zip file
-
-🔁 Update Lambda Code Anytime
-
-(Useful when testing new features)
-
-.\manage-bot.ps1
-
-The script will:
-
-reset offset
-
-zip lambda
-
-update code
-
-invoke function
-
-show logs
-
-scan DynamoDB tables
-
-💬 Test the Bot in Telegram
-
-Send messages to your bot:
-
-/hello /save city Berlin /get city /list This is a normal message /history 5 /search message
-
-Then manually invoke Lambda to force it to poll:
-
-awslocal lambda invoke --function-name telegram-bot output.json type output.json
-
-📊 Check DynamoDB Data See stored user messages awslocal dynamodb query --table-name user_messages --key-condition-expression "user_id = :u" ` --expression-attribute-values ":u={S=123456789}"
-
-See keyword index awslocal dynamodb scan --table-name keyword_index
-
-Reset update offset awslocal dynamodb delete-item --table-name bot_meta --key "meta_key={S=update_offset}"
-
-🧠 How Search Works
-
-Every message is tokenized into keywords (e.g., "hello", "testing", "bot") and stored in the keyword_index table with:
-
-keyword → user_id + timestamp → message_id
-
-This lets /search instantly fetch relevant messages.
-
-🐞 Troubleshooting Lambda says processed: 0
-
-Reset offset:
-
-awslocal dynamodb delete-item --table-name bot_meta --key "meta_key={S=update_offset}"
-
-Send new messages in Telegram
-
-Invoke Lambda again
-
-“No module named requests”
-
-Install dependencies into lambda/:
-
-pip install requests -t lambda/
-
-DynamoDB query errors (JSON parsing)
-
-Use shorthand notation:
-
---expression-attribute-values ":u={S=123456789}"
-
-📦 Future Improvements
-
-You can expand this bot into:
-
-user-specific dashboards
-
-sentiment analysis on message history
-
-SSE-streaming bot logs
-
-chatbot memory with embeddings
-
-full-text search using OpenSearch
+📱 AI-Powered Telegram Bot (AWS + DynamoDB + Lambda + OpenAI)
+This project is a fully serverless Telegram bot built on AWS Lambda, API Gateway, and DynamoDB, with optional OpenAI integration for AI responses.
+It supports:
+•	Saving and retrieving your own data
+•	Searching your message history
+•	Key/value personal notes
+•	AI question answering
+•	DynamoDB-backed storage
+•	Clean, simple command-based UX
+________________________________________
+🚀 Features
+Core Commands
+Command	Description
+/start	Welcome message + full command list
+/hello	Simple greeting
+/help	Show all commands
+/echo <text>	Echo back any text
+/save <key> <value>	Save a key/value pair
+/get <key>	Retrieve a saved value
+/list	List all saved keys
+/getid <message_id>	Retrieve a stored message by ID
+/search <keyword>	Full-text search across user messages
+/latest	Show latest saved message
+/history	Show last 5 saved messages
+/ask <question>	Get an AI answer (OpenAI)
+/menu	Show full text-based help menu
+________________________________________
+🗂 Architecture Overview
+This bot is completely serverless.
+ 
+AWS Components
+•	API Gateway (HTTP API)
+Receives webhook updates from Telegram.
+•	Lambda Function
+o	Parses commands
+o	Saves/reads from DynamoDB
+o	Calls OpenAI for /ask responses
+•	DynamoDB Table
+o	Partition key: user_id
+o	Sort key: sort_key
+o	Stores notes, key/value pairs, and message history.
+•	IAM Role / Policies
+Lambda permissions for DynamoDB and logs.
+________________________________________
+📦 Project Structure
+/
+├── main.tf                 # Terraform infra
+├── handler.py              # AWS Lambda bot logic
+├── terraform.tfvars        # Bot token + OpenAI key
+└── README.md               # This file
+________________________________________
+🔧 Deployment Instructions
+1. Clone the repository
+ ________________________________________
+2. Add environment variables (Terraform)
+Create a file named:
+ 
+Add:
+ ________________________________________
+3. Build the Lambda package
+ 
+________________________________________
+4. Deploy with Terraform
+ 
+Terraform outputs the webhook URL.
+________________________________________
+5. Set the Telegram webhook
+ ________________________________________
+🤖 OpenAI Integration
+The /ask command supports OpenAI’s API via:
+ 
+If you don't want AI:
+•	remove the OPENAI_API_KEY var
+•	/ask will respond with a friendly fallback message
+If you get:
+ 
+Add a payment method or increase your usage limits at:
+https://platform.openai.com/account/billing/limits
+________________________________________
+📜 DynamoDB Schema
+Key/value items
+ 
+Message history items
+ 
+This allows fast:
+•	/search
+•	/history
+•	/latest
+•	/getid
+________________________________________
+🛠 Useful Commands
+Rebuild Lambda:
+ 
+
+Check logs:
+AWS Console → CloudWatch → /aws/lambda/<function_name>
+________________________________________
+🧪 Example Usage
+ ________________________________________
+💡 Future Enhancements
+•	Add user authentication
+•	Add job-matching features
+•	Add document parsing (PDF/CV -> skills extraction)
+•	Add analytics dashboard in Streamlit
+•	Add multi-step guided flows
