@@ -210,7 +210,6 @@ def ask_openai(question: str) -> str:
     print("Error calling OpenAI:", repr(e))
     return "Sorry, I could not get an OpenAI reply right now."
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 def ask_gemini(prompt: str) -> str:
   """Call Gemini (Google Generative Language API)."""
@@ -697,3 +696,4 @@ def lambda_handler(event, context):
       "statusCode": 200,
       "body": json.dumps({"ok": True}),
   }
+
